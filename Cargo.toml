@@ -1,0 +1,11 @@
+[package]
+name = "pixelin"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+bevy = "0.15.1"
+bevy_pancam = "0.17.0"
+image = "0.25.5"
+my-fluent-rs-helper= { path = "../my-fluent-rs-helper" }
+ndarray = "0.16.1"

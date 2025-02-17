@@ -3,6 +3,7 @@ use my_fluent_rs_helper::*;
 mod mix_methods;
 mod tools;
 mod patterns;
+mod group_checker;
 
 
 use bevy_pancam::*;

@@ -3,9 +3,14 @@ name = "pixelin"
 version = "0.1.0"
 edition = "2024"
 
+# [target.x86_64-pc-windows-msvc]
+# linker = "rust-lld.exe"
+# rustflags = ["-Clinker=lld", "-Zshare-generics=n"]
+
 [dependencies]
-bevy = "0.15.1"
+bevy = { version = "0.15.1", features = [] }
 bevy_pancam = "0.17.0"
+bevy_ui = "0.15.2"
 image = "0.25.5"
-my-fluent-rs-helper= { path = "../my-fluent-rs-helper" }
+my-fluent-rs-helper = "0.1.0"
 ndarray = "0.16.1"

@@ -9,9 +9,13 @@ struct GroupComponent{
     current_checked: Entity,
 }
 
-pub trait Checkable {
-    fn do_check();
-    fn do_uncheck();
+#[derive(Component)]
+pub struct Checkable<CheckType>(CheckType);
+
+#[derive(Component)]
+pub struct CheckMarker;
+
+fn on_checkable_clicked<T>(
+    query: Query<(&Interaction, Checkable<T>, )
+) {
 }
-
-

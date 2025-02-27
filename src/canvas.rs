@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 #[derive(Component, Debug,)]
-struct Canvas {
+pub(crate) struct Canvas {
 }
 
 

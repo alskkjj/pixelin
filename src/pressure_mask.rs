@@ -4,14 +4,14 @@ use bevy::prelude::*;
 
 pub(crate) struct MaskGeneratingFunc<'a> {
     pub name: String,
-    pub fun: Box<dyn Fn(u32, u32, &UVec2) -> f32 + 'a>,
+    pub fun: Box<dyn Fn(u32, u32, &UVec2) -> f32 + 'a + Send + Sync>,
 }
 
-static mut NAME_NUMBER: RwLock<u32> = RwLock::new(0);
+static NAME_NUMBER: RwLock<u32> = RwLock::new(0);
 
 impl <'a> MaskGeneratingFunc<'a> {
-    pub fn new(name: Option<String>, f: impl Fn(u32, u32, &UVec2) -> f32 + 'a) -> Self {
-        let num = format!("{}", unsafe {
+    pub fn new(name: Option<String>, f: impl Fn(u32, u32, &UVec2) -> f32 + 'a + Send + Sync) -> Self {
+        let num = format!("{}", 
             match NAME_NUMBER.write() {
                 Ok(mut o) => {
                     let old = o.clone();
@@ -21,8 +21,7 @@ impl <'a> MaskGeneratingFunc<'a> {
                 Err(e) => {
                     panic!("number lock failed: {}.", e) 
                 }
-            }
-        });
+            });
             
         let name = name.unwrap_or("UnnamedMaskGeneratingFunc".to_owned() + &num);
         Self {

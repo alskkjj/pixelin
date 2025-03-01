@@ -1,11 +1,49 @@
+
 use std::collections::HashMap;
 
-use std::sync::RwLock;
+use std::sync::{RwLock, };
 use std::fmt;
 use std::f64::consts::{SQRT_2, FRAC_1_SQRT_2};
 use bevy::color::palettes::css;
 use bevy::prelude::*;
 use image::RgbaImage;
+
+static NAME_NUMBER: RwLock<u32> = RwLock::new(0u32);
+
+pub(crate) struct PatternGeneratingFunc<'a> {
+    pub name: String,
+    pub fun: Box<dyn Fn(u32, u32, &UVec2) -> Srgba + 'a + Send + Sync>,
+}
+
+impl <'a> fmt::Debug for PatternGeneratingFunc<'a> {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.debug_struct("PatternGeneratingFunc")
+            .field("name", &self.name)
+            .finish()
+    }
+}
+
+impl <'a> PatternGeneratingFunc<'a> {
+    pub(crate) fn new(name: Option<String>, f: impl Fn(u32, u32, &UVec2) -> Srgba + 'a + Send + Sync) -> Self {
+        let num = match NAME_NUMBER.write() {
+                Ok(mut o) => {
+                    let old = o.clone();
+                    *o += 1;
+                    old
+                },
+                Err(e) => {
+                    panic!("pattern generating write lock acquired failed: {}", e)
+                }
+            };
+
+        let num = format!("{}", num);
+        let name = name.unwrap_or("UnnamedPatternGeneratingFunc".to_owned() + &num); 
+        Self {
+            name, 
+            fun: Box::new(f)
+        }
+    }
+}
 
 #[derive(Clone, Debug)]
 pub(crate) enum ColorMap {
@@ -20,44 +58,6 @@ fn coord_to_index(coord: UVec2, width: u32) -> usize {
 
 fn coord_in_size(coord: &UVec2, size: &UVec2) -> bool {
     coord.x < size.x && coord.y < size.y
-}
-
-static mut NUME_NUMBER: RwLock<u32> = RwLock::new(0);
-
-pub(crate) struct PatternGeneratingFunc<'a> {
-    pub name: String,
-    pub fun: Box<dyn Fn(u32, u32, &UVec2) -> Srgba + 'a>,
-}
-
-impl <'a> fmt::Debug for PatternGeneratingFunc<'a> {
-    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        formatter.debug_struct("PatternGeneratingFunc")
-            .field("name", &self.name)
-            .finish()
-    }
-}
-
-impl <'a> PatternGeneratingFunc<'a> {
-    pub(crate) fn new(name: Option<String>, f: impl Fn(u32, u32, &UVec2) -> Srgba + 'a) -> Self {
-        let num = unsafe { 
-            match NUME_NUMBER.write() {
-                Ok(mut o) => {
-                    let old = o.clone();
-                    *o += 1;
-                    old
-                },
-                Err(e) => {
-                    panic!("pattern generating write lock acquired failed: {}", e)
-                }
-            }
-        };
-        let num = format!("{}", num);
-        let name = name.unwrap_or("UnnamedPatternGeneratingFunc".to_owned() + &num); 
-        Self {
-            name, 
-            fun: Box::new(f)
-        }
-    }
 }
 
 pub(crate) struct ComplexColor {
@@ -153,7 +153,8 @@ fn sub_helper(i: usize, j: usize, w: usize) -> (isize, isize) {
     return (i - w, j - w);
 }
 
-fn cake_generate<T, F>(radius: f64, defau: T, f: F) -> Vec<Vec<T>> 
+
+pub(crate) fn cake_generate<T, F>(radius: f64, defau: T, f: F) -> Vec<Vec<T>> 
     where T: Copy,
           F: Fn(f64, f64) -> T
 {

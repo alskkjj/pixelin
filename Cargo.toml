@@ -8,7 +8,7 @@ edition = "2024"
 # rustflags = ["-Clinker=lld", "-Zshare-generics=n"]
 
 [dependencies]
-bevy = { version = "0.15.1", features = [] }
+bevy = { version = "0.15.2", features = [] }
 bevy_pancam = "0.17.0"
 bevy_ui = "0.15.2"
 image = "0.25.5"

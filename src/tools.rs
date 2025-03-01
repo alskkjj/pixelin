@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 use image::RgbaImage;
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 
 use crate::patterns::PatternGeneratingFunc;
 use crate::pressure_mask::MaskGeneratingFunc;

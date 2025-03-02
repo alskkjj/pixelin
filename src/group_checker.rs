@@ -1,6 +1,8 @@
 use bevy::prelude::*;
+use bevy::ecs::system::SystemId;
 
 use std::marker::PhantomData;
+
 
 pub trait CheckAction {
     fn do_check<'w>(&mut self, commands: &mut Commands, parent: Entity, children: &'w [Entity]);
@@ -13,20 +15,49 @@ pub struct Checkable<CheckType: Sync + Send + CheckAction>(pub CheckType);
 #[derive(Component)]
 pub struct CheckMarker<CheckType: Sync + Send + CheckAction + 'static>(PhantomData<CheckType>);
 
+#[derive(Event, Debug, )]
+pub struct Checked;
+
+#[derive(Resource)]
+pub struct RemoveMarkedId<T: Sync + Send + CheckAction + 'static>(SystemId, PhantomData<T>);
+
 pub fn init_me<CheckType>(app: &mut App)
     where CheckType: Clone + Send + Sync + CheckAction + 'static {
         app.add_systems(
             Update,
             on_checkable_clicked::<CheckType>,
         );
+        let sid = app.register_system(remove_marked::<CheckType>);
+        app.insert_resource(RemoveMarkedId(sid, PhantomData::<CheckType>));
+}
+
+fn remove_marked<T>(
+    mut commands: Commands,
+    marked: Option<Single<(Entity, &mut Checkable<T>, &Children), With<CheckMarker<T>>>>,
+    ) 
+    where T: Clone + Send + Sync + CheckAction + 'static
+{
+    if let Some(marked_single) = marked {
+        let (marked_ent, mut checkable, children) = marked_single.into_inner();
+        commands.entity(marked_ent).remove::<CheckMarker<T>>();
+        checkable.0.do_uncheck(&mut commands, marked_ent, &children);
+    }
 }
 
 fn on_checkable_clicked1<T: Clone + Send + Sync + CheckAction + 'static>(
-    mut checkable: Query<Entity, With<Checkable<T>>>,
-    mut children_query: Query<&Children, With<Checkable<T>>>,
-) 
+    trigger: Trigger<Checked>,
+    mut commands: Commands,
+    mut checkable: Query<(Entity, &mut Checkable<T>), With<Checkable<T>>>,
+    children_query: Query<&Children, With<Checkable<T>>>,
+    sid: Res<RemoveMarkedId<T>>,
+)
 {
+    let (parent, mut ck) = checkable.get_mut(trigger.entity())
+        .expect("The Entity observed isn't checkable.");
     
+    let children = children_query.children(parent);
+    ck.0.do_check(&mut commands, parent, children);
+    commands.run_system(sid.0);
 }
 
 fn on_checkable_clicked<T: Clone + Send + Sync + CheckAction + 'static>(
